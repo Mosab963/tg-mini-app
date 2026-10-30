@@ -53,11 +53,12 @@ app.post('/api/verify-code', async (req, res) => {
     
     await client.connect();
 
+    // محاولة تسجيل الدخول بالرمز المدخل (سواء 5 أو 6 أرقام)
     const signInResult = await client.invoke(
       new Api.auth.SignIn({
         phoneNumber: phoneNumber,
         phoneCodeHash: phoneCodeHash,
-        phoneCode: phoneCode,
+        phoneCode: phoneCode.toString().trim(),
       })
     );
 
@@ -70,6 +71,7 @@ app.post('/api/verify-code', async (req, res) => {
     });
 
   } catch (error) {
+    console.error('خطأ في التحقق:', error);
     if (error.errorMessage === 'SESSION_PASSWORD_NEEDED') {
       return res.json({ success: false, needPassword: true, message: 'الحساب محمي بكلمة مرور (2FA)' });
     }
