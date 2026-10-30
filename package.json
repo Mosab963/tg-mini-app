@@ -1,6 +1,7 @@
 {
-  "name": "telegram-mini-app-auth",
+  "name": "tg-mini-app",
   "version": "1.0.0",
+  "description": "Telegram Mini App for Verification",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
