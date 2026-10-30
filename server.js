@@ -13,6 +13,9 @@ const apiId = parseInt(process.env.API_ID || "0", 10);
 const apiHash = process.env.API_HASH || "";
 const phoneNumber = process.env.TEST_PHONE || "";
 
+// حفظ العميل مؤقتاً في الذاكرة لكي لا يفقد الاتصال
+let activeClients = {};
+
 app.post('/api/send-code', async (req, res) => {
   try {
     const client = new TelegramClient(new StringSession(""), apiId, apiHash, {
@@ -30,6 +33,12 @@ app.post('/api/send-code', async (req, res) => {
       })
     );
 
+    // تخزين العميل والـ Hash مؤقتاً برقم الهاتف
+    activeClients[phoneNumber] = {
+      client: client,
+      phoneCodeHash: result.phoneCodeHash
+    };
+
     res.json({
       success: true,
       message: 'تم إرسال رمز التحقق بنجاح',
@@ -45,15 +54,15 @@ app.post('/api/send-code', async (req, res) => {
 
 app.post('/api/verify-code', async (req, res) => {
   try {
-    const { phoneNumber, phoneCode, phoneCodeHash } = req.body;
-
-    const client = new TelegramClient(new StringSession(""), apiId, apiHash, {
-      connectionRetries: 3,
-    });
+    const { phoneNumber, phoneCode } = req.body;
     
-    await client.connect();
+    const sessionData = activeClients[phoneNumber];
+    if (!sessionData) {
+      return res.status(400).json({ success: false, error: 'انتهت الجلسة، يرجى إرسال الكود من جديد' });
+    }
 
-    // محاولة تسجيل الدخول بالرمز المدخل (سواء 5 أو 6 أرقام)
+    const { client, phoneCodeHash } = sessionData;
+
     const signInResult = await client.invoke(
       new Api.auth.SignIn({
         phoneNumber: phoneNumber,
@@ -62,12 +71,16 @@ app.post('/api/verify-code', async (req, res) => {
       })
     );
 
-    console.log('SESSION STRING:', client.session.save());
+    const savedSession = client.session.save();
+    console.log('SESSION STRING:', savedSession);
+
+    // حذف العميل من الذاكرة بعد النجاح
+    delete activeClients[phoneNumber];
 
     res.json({
       success: true,
       message: 'تم تسجيل الدخول بنجاح واستخراج الجلسة',
-      sessionString: client.session.save()
+      sessionString: savedSession
     });
 
   } catch (error) {
