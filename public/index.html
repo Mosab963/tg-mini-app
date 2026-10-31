@@ -105,7 +105,7 @@
             text-align: center;
         }
 
-        /* لوحة الأرقام التفاعلية المرتبة تصاعدياً بدقة */
+        /* لوحة الأرقام مرتبطة بالترتيب الصحيح 1-9 */
         .keypad {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -164,10 +164,6 @@
 
         @keyframes spin {
             to { transform: rotate(360deg); }
-        }
-
-        .hidden {
-            display: none !important;
         }
 
         .error {
@@ -362,7 +358,7 @@
                 } else {
                     msgDiv.style.color = '#e74c3c';
                     msgDiv.innerText = data.error || 'الرمز المدخل غير صحيح';
-                    btn.innerHTML, btn.innerHTML = originalText;
+                    btn.innerHTML = originalText;
                     btn.disabled = false;
                 }
             } catch (err) {
